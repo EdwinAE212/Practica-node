@@ -1,3 +1,9 @@
-node_module/
+# Node modules
+node_modules/
 
+# Env file
 .env
+
+# Logs
+npm-debug.log
+yarn-error.log
