@@ -1,15 +1,63 @@
 const Especie = require("../Models/EspeciesModel");
+const Personaje = require("../Models/PersonajesModel");
 
 const Agregar = async (data) => new Especie(data).save();
 
-const Editar = async (id, data) => Especie.findByIdAndUpdate(id, data, { new: true, select: "-createdAt -updatedAt" });
+const Editar = async (id, data) => {
+    const mongoose = require("mongoose");
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return { mensaje: "No se encontró la especie con ese ID" };
+    }
 
-const Eliminar = async (id) => { await Especie.findByIdAndDelete(id); return { message: "La Especie ha sido exterminada"}; };
+    const result = await Especie.findByIdAndUpdate(id, data, { new: true, select: "-createdAt -updatedAt" });
+    if (!result) {
+        return { mensaje: "No se encontró la especie con ese ID" };
+    }
+    return result;
+};
+
+const Eliminar = async (id) => {
+    const mongoose = require("mongoose");
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return { mensaje: "No se encontró la especie con ese ID" };
+    }
+
+    const result = await Especie.findByIdAndDelete(id);
+    if (!result) {
+        return { mensaje: "No se encontró la especie con ese ID" };
+    }
+    return { message: "La especie ha sido eliminada" };
+};
 
 const ListaTodos = async (page = 1, limit = 10) => Especie.find({}, "-createdAt -updatedAt").skip((page - 1) * limit).limit(limit);
+const Contar = async () => Especie.countDocuments();
 
-const ListaPersonaje = async () => Especie.find({}, "name");
+const ListaPersonaje = async (name) => {
+    const personaje = await Personaje.findOne({ 
+        name: { $regex: name, $options: "i" } 
+    }).populate({
+        path: "species",           
+        select: "_id name"  
+    });
 
-const BuscarPorId = async (id) => Especie.findById(id, "-createdAt -updatedAt");
+    if (!personaje || !personaje.species || personaje.species.length === 0) {
+        return { mensaje: "No se encontró ese personaje o no tiene una especie asociadas, intente con otro nombre" };
+    }
 
-module.exports = { Agregar, Editar, Eliminar, ListaTodos, ListaPersonaje, BuscarPorId };
+    return personaje.species;
+};
+
+const BuscarPorId = async (id) => {
+    const mongoose = require("mongoose");
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return { mensaje: "No se encontró la especie con ese ID" };
+    }
+
+    const result = await Especie.findById(id, "-createdAt -updatedAt");
+    if (!result) {
+        return { mensaje: "No se encontró la especie con ese ID" };
+    }
+    return result;
+};
+
+module.exports = { Agregar, Editar, Eliminar, ListaTodos, Contar, ListaPersonaje, BuscarPorId };
